@@ -1,5 +1,9 @@
-import { Duration, Stack, StackProps } from "aws-cdk-lib";
-import { LambdaIntegration, RestApi } from "aws-cdk-lib/aws-apigateway";
+import { CfnOutput, Duration, Stack, StackProps } from "aws-cdk-lib";
+import {
+    LambdaIntegration,
+    RestApi,
+    Resource,
+} from "aws-cdk-lib/aws-apigateway";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
 import { Construct } from "constructs";
 import { join } from "path";
@@ -10,14 +14,34 @@ const connectLambdaToApi = (
     api: RestApi,
     lambda: NodejsFunction,
     endpoint: string,
-    method: string
+    method: string,
+    apiResources?: Array<Resource>
 ) => {
-    const apiResource = api.root.addResource(endpoint);
+    apiResources = apiResources || [];
+    let endpoints = endpoint.split("/");
+
+    for (let i = 0; i < endpoints.length; i++) {
+        let resource: any = apiResources.find((r) => r.path === endpoints[i]);
+        if (!resource) {
+            if (i === 0) {
+                resource = api.root;
+            } else {
+                resource = apiResources[i - 1];
+            }
+            const newResource = resource.addResource(endpoints[i]);
+            apiResources.push(newResource);
+        }
+    }
     const lambdaIntegration = new LambdaIntegration(lambda);
-    const tronGetBalancMethod = apiResource.addMethod(
+    const apiMethod = apiResources[apiResources.length - 1].addMethod(
         method,
         lambdaIntegration
     );
+    return {
+        apiResources,
+        lambdaIntegration,
+        apiMethod,
+    };
 };
 export class ListenWorldCdkStack extends Stack {
     constructor(scope: Construct, id: string, props?: StackProps) {
@@ -41,6 +65,23 @@ export class ListenWorldCdkStack extends Stack {
                 memorySize: 256,
             }
         );
-        connectLambdaToApi(api, listenWorldLambda, "listen", "POST");
+        const listenPath = connectLambdaToApi(
+            api,
+            listenWorldLambda,
+            "listen",
+            "POST"
+        );
+        const notificationListenerPath = connectLambdaToApi(
+            api,
+            listenWorldLambda,
+            "notification/listener",
+            "POST"
+        );
+
+        // output the api endpoint url
+        new CfnOutput(this, "listenWorldApiUrl", {
+            value: listenPath.apiResources[listenPath.apiResources.length - 1]
+                .path,
+        });
     }
 }
