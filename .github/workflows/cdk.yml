@@ -17,13 +17,16 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-2
+          aws-region: us-east-1
 
       - name: Install npm
         run: 'sudo apt-get update -y && sudo apt-get install nodejs npm -y'
         
-      - name: Install CDK
-        run: 'npm install -g aws-cdk'
+      - name: Install AWS CDK
+        run: 'sudo npm install -g aws-cdk'
+
+      - name: Npm Install
+        run: 'npm install'
 
       - name: CDK Synth
         run: 'cdk synth'
