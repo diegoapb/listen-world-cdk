@@ -74,7 +74,7 @@ export class ListenWorldCdkStack extends Stack {
         const notificationListenerPath = connectLambdaToApi(
             api,
             listenWorldLambda,
-            "notification/listener",
+            "notifications/listener",
             "POST"
         );
 
