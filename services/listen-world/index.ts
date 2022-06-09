@@ -5,6 +5,7 @@ export async function main(
     event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
     console.log("event 👉", event);
+    console.log("Hello CDK")
 
     return {
         body: JSON.stringify({
